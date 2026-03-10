@@ -10,37 +10,43 @@ import './Dashboard3D.css';
 
 export default function Dashboard3D() {
   return (
-    <div className="dashboard-layout">
-      {/* 3D Scene Background Layer */}
-      <div className="scene-layer">
+    <div className="dashboard-grid-layout">
+      {/* 3D SCENE BACKGROUND */}
+      <div className="dashboard-scene-container">
         <DashboardScene />
       </div>
 
-      {/* UI Overlay Layer */}
-      <div className="ui-layer">
-        <aside className="sidebar-area">
+      {/* OVERLAY UI */}
+      <div className="dashboard-overlay">
+        
+        {/* LEFT: Sidebar Navigation */}
+        <aside className="dashboard-sidebar">
           <Sidebar />
         </aside>
 
-        <main className="main-area">
-          <header className="topbar-area">
+        {/* CENTER/RIGHT COLUMN */}
+        <main className="dashboard-main">
+          
+          {/* TOP: Timeline & Zone */}
+          <header className="dashboard-topbar">
             <TopBar />
           </header>
 
-          <div className="widgets-area">
-            {/* Left side empty for 3D visibility */}
+          {/* MIDDLE: 3D Viewport Area & Absolute Widgets */}
+          <div className="dashboard-widgets-viewport">
             
-            {/* Bottom Panel */}
-            <div className="bottom-panel-container">
-              <MachineIndicatorsWidget />
-            </div>
-
-            {/* Right Side Panels */}
-            <div className="right-panel-container">
+            {/* RIGHT: Stacked Widgets */}
+            <div className="dashboard-right-panel">
               <DataOverviewWidget />
               <MapWidget />
               <ChartWidget />
             </div>
+
+            {/* BOTTOM: Wide Widget */}
+            <div className="dashboard-bottom-panel">
+              <MachineIndicatorsWidget />
+            </div>
+
           </div>
         </main>
       </div>

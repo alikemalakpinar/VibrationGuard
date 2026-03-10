@@ -6,13 +6,21 @@ import * as THREE from 'three';
 // --- Global Theme Constants ---
 const GLOW_GREEN = '#2de25b';
 const GLOW_ORANGE = '#f29c38';
-const MACHINE_MATERIAL = { color: '#1a1a1a', roughness: 0.8, metalness: 0.2 };
+const GLOW_CRITICAL = '#ef4444';
+const MACHINE_MATERIAL = { color: '#111111', roughness: 0.8, metalness: 0.3 };
+const ACCENT_MATERIAL = { color: '#222222', roughness: 0.6, metalness: 0.5 };
 
-// --- Glassmorphic Floating UI Label ---
+// --- Glassmorphic Floating UI Label (AICO Spec) ---
 const MachineLabel = ({ id, health, status }) => {
-  const isWarning = status === 'warning';
-  const color = isWarning ? 'var(--accent-orange)' : 'var(--accent-green)';
-  const glow = isWarning ? 'rgba(242, 156, 56, 0.6)' : 'rgba(45, 226, 91, 0.6)';
+  let color = 'var(--accent-green)';
+  let glow = 'rgba(45, 226, 91, 0.6)';
+  if (status === 'warning') {
+    color = 'var(--accent-orange)';
+    glow = 'rgba(242, 156, 56, 0.6)';
+  } else if (status === 'critical') {
+    color = 'var(--accent-critical)';
+    glow = 'rgba(239, 68, 68, 0.6)';
+  }
   
   return (
     <Html 
@@ -46,24 +54,40 @@ const MachineLabel = ({ id, health, status }) => {
           boxShadow: `0 0 8px ${glow}`,
         }} />
         <span style={{ color: 'var(--text-secondary)' }}>{id}</span>
-        <span style={{ color: color, filter: `drop-shadow(0 0 4px ${glow})` }}>{health}%</span>
+        <span className="tabular-data" style={{ color: color, filter: `drop-shadow(0 0 4px ${glow})` }}>{health}%</span>
       </div>
     </Html>
   );
 };
 
-// --- Complex Animated Robot Machine ---
-function RobotMachine({ position, id, health, status, rotationOffset = 0, timeScale = 1 }) {
+// --- Base Floor Plate for Machines ---
+const GlowingBase = ({ color }) => (
+  <group>
+    <mesh position={[0, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+      <planeGeometry args={[5, 5]} />
+      <meshBasicMaterial color={color} transparent opacity={0.15} side={THREE.DoubleSide} depthWrite={false} />
+    </mesh>
+    <mesh position={[0, 0.05, 0]}>
+      <boxGeometry args={[4, 0.1, 4]} />
+      <meshStandardMaterial color="#0a0a0a" roughness={0.9} />
+    </mesh>
+    <lineSegments position={[0, 0.05, 0]}>
+      <edgesGeometry args={[new THREE.BoxGeometry(4, 0.1, 4)]} />
+      <lineBasicMaterial color={color} transparent opacity={0.4} />
+    </lineSegments>
+  </group>
+);
+
+// --- 1. Robot Arm Machine ---
+function RobotArmMachine({ position, id, health, status, timeScale = 1, rotationOffset = 0 }) {
   const baseRef = useRef();
   const lowerArmRef = useRef();
   const upperArmRef = useRef();
   const headRef = useRef();
   
-  const isWarning = status === 'warning';
-  const glowColor = isWarning ? GLOW_ORANGE : GLOW_GREEN;
-  const targetIntensity = isWarning ? 3 : 1.5;
+  const glowColor = status === 'critical' ? GLOW_CRITICAL : status === 'warning' ? GLOW_ORANGE : GLOW_GREEN;
+  const targetIntensity = status !== 'active' ? 3 : 1.5;
 
-  // Assembly Animation Loop
   useFrame((state) => {
     const t = state.clock.getElapsedTime() * timeScale + rotationOffset;
     if (baseRef.current && lowerArmRef.current && upperArmRef.current && headRef.current) {
@@ -76,157 +100,213 @@ function RobotMachine({ position, id, health, status, rotationOffset = 0, timeSc
 
   return (
     <group position={position}>
-      {/* 1. Floor Glowing Base Plate */}
-      <mesh position={[0, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[4.5, 4.5]} />
-        <meshBasicMaterial 
-          color={glowColor} 
-          transparent 
-          opacity={0.15} 
-          side={THREE.DoubleSide} 
-          depthWrite={false}
-        />
-      </mesh>
+      <GlowingBase color={glowColor} />
       
-      {/* 2. Base Bounding Structure */}
-      <mesh position={[0, 0.05, 0]}>
-         <boxGeometry args={[3.5, 0.1, 3.5]} />
-         <meshStandardMaterial color="#111" roughness={0.9} metalness={0.1} />
-      </mesh>
-      {/* Base Edge Highlight */}
-      <lineSegments position={[0, 0.05, 0]}>
-         <edgesGeometry args={[new THREE.BoxGeometry(3.5, 0.1, 3.5)]} />
-         <lineBasicMaterial color={glowColor} transparent opacity={0.4} />
-      </lineSegments>
-
-      {/* 3. Machine Base Pedestal */}
+      {/* Pedestal */}
       <mesh position={[0, 0.5, 0]}>
         <cylinderGeometry args={[0.9, 1.3, 1, 32]} />
         <meshStandardMaterial {...MACHINE_MATERIAL} />
       </mesh>
 
-      {/* 4. Revolving Base Joint */}
       <group position={[0, 1.0, 0]} ref={baseRef}>
         <mesh position={[0, 0.4, 0]}>
           <boxGeometry args={[1.4, 0.8, 1.4]} />
           <meshStandardMaterial {...MACHINE_MATERIAL} />
         </mesh>
 
-        {/* 5. Lower Arm Pivot & Arm */}
         <group position={[0, 0.8, 0]} ref={lowerArmRef}>
-          {/* Pivot Cylinder */}
           <mesh rotation={[Math.PI / 2, 0, 0]}>
             <cylinderGeometry args={[0.6, 0.6, 1.8, 32]} />
-            <meshStandardMaterial color="#222" roughness={0.6} metalness={0.5} />
-            <lineSegments>
-              <edgesGeometry args={[new THREE.CylinderGeometry(0.6, 0.6, 1.8, 32)]} />
-              <lineBasicMaterial color={glowColor} transparent opacity={0.15} />
-            </lineSegments>
+            <meshStandardMaterial {...ACCENT_MATERIAL} />
           </mesh>
-          
-          {/* Lower Arm Body */}
           <mesh position={[0, 1.4, 0]}>
             <boxGeometry args={[0.7, 2.8, 0.7]} />
             <meshStandardMaterial {...MACHINE_MATERIAL} />
-            <lineSegments>
-              <edgesGeometry args={[new THREE.BoxGeometry(0.7, 2.8, 0.7)]} />
-              <lineBasicMaterial color={glowColor} transparent opacity={0.1} />
-            </lineSegments>
           </mesh>
 
-          {/* 6. Upper Arm Pivot & Arm */}
           <group position={[0, 2.8, 0]} ref={upperArmRef}>
-            {/* Pivot Cylinder */}
             <mesh rotation={[Math.PI / 2, 0, 0]}>
               <cylinderGeometry args={[0.5, 0.5, 1.4, 32]} />
-              <meshStandardMaterial color="#222" roughness={0.6} metalness={0.5} />
+              <meshStandardMaterial {...ACCENT_MATERIAL} />
             </mesh>
-            
-            {/* Upper Arm Body */}
             <mesh position={[0, 1.2, 0]}>
               <boxGeometry args={[0.5, 2.4, 0.5]} />
               <meshStandardMaterial {...MACHINE_MATERIAL} />
             </mesh>
 
-            {/* 7. Precision Effector Head */}
             <group position={[0, 2.4, 0]}>
-               {/* Head Unit */}
                <mesh ref={headRef}>
                  <cylinderGeometry args={[0.4, 0.4, 1.0, 16]} />
                  <meshStandardMaterial {...MACHINE_MATERIAL} />
                </mesh>
-               
-               {/* Emissive Laser/Welding Tip */}
                <mesh position={[0, -0.6, 0]}>
                   <cylinderGeometry args={[0.15, 0.05, 0.3, 16]} />
                   <meshStandardMaterial color="#ffffff" emissive={glowColor} emissiveIntensity={targetIntensity} toneMapped={false} />
                </mesh>
-               
-               {/* Dynamic Local Point Light */}
                <pointLight color={glowColor} intensity={targetIntensity} distance={6} decay={2} position={[0, -0.8, 0]} />
             </group>
           </group>
         </group>
       </group>
-
-      {/* Callout Label positioned above the machine */}
       <MachineLabel id={id} health={health} status={status} />
     </group>
   );
 }
 
+// --- 2. CNC Milling Machine ---
+function CNCMachine({ position, id, health, status, timeScale = 1, rotationOffset = 0 }) {
+  const spindleRef = useRef();
+  const glowColor = status === 'critical' ? GLOW_CRITICAL : status === 'warning' ? GLOW_ORANGE : GLOW_GREEN;
+
+  useFrame((state) => {
+    const t = state.clock.getElapsedTime() * timeScale * 2 + rotationOffset;
+    if (spindleRef.current) {
+      spindleRef.current.position.x = Math.sin(t) * 0.8;
+      spindleRef.current.position.z = Math.cos(t * 0.5) * 0.5;
+    }
+  });
+
+  return (
+    <group position={position}>
+      <GlowingBase color={glowColor} />
+      
+      {/* Main Enclosure */}
+      <mesh position={[0, 1.8, -0.5]}>
+        <boxGeometry args={[3.2, 3.4, 2]} />
+        <meshStandardMaterial {...MACHINE_MATERIAL} />
+      </mesh>
+
+      {/* Glass Window */}
+      <mesh position={[0, 1.8, 0.55]}>
+        <boxGeometry args={[2.8, 2, 0.1]} />
+        <meshStandardMaterial color="#0b1111" transparent opacity={0.6} roughness={0.1} metalness={0.9} />
+      </mesh>
+
+      {/* Emissive Inside Bed Light */}
+      <rectAreaLight width={3} height={2} color="#ffffff" intensity={2} position={[0, 3, 0]} rotation={[-Math.PI / 2, 0, 0]} />
+
+      {/* Moving Spindle Inside */}
+      <group position={[0, 2.5, 0]} ref={spindleRef}>
+        <mesh position={[0, -0.5, 0]}>
+          <cylinderGeometry args={[0.2, 0.2, 1, 16]} />
+          <meshStandardMaterial {...ACCENT_MATERIAL} />
+        </mesh>
+        <mesh position={[0, -1.1, 0]}>
+          <cylinderGeometry args={[0.05, 0.01, 0.4, 8]} />
+          <meshStandardMaterial color="#ffffff" emissive={glowColor} emissiveIntensity={1.5} toneMapped={false} />
+        </mesh>
+        <pointLight color={glowColor} intensity={0.5} distance={3} position={[0, -1.2, 0]} />
+      </group>
+
+      <MachineLabel id={id} health={health} status={status} />
+    </group>
+  );
+}
+
+// --- 3. Conveyor Belt Motor System ---
+function ConveyorBelt({ position, id, health, status, timeScale = 1 }) {
+  const rollerRef1 = useRef();
+  const rollerRef2 = useRef();
+  const rollerRef3 = useRef();
+  const glowColor = status === 'critical' ? GLOW_CRITICAL : status === 'warning' ? GLOW_ORANGE : GLOW_GREEN;
+
+  useFrame((state) => {
+    const t = state.clock.getElapsedTime() * timeScale * 5;
+    if (rollerRef1.current) rollerRef1.current.rotation.z = t;
+    if (rollerRef2.current) rollerRef2.current.rotation.z = t;
+    if (rollerRef3.current) rollerRef3.current.rotation.z = t;
+  });
+
+  return (
+    <group position={position}>
+      <GlowingBase color={glowColor} />
+      
+      {/* Conveyor Legs */}
+      <mesh position={[-1.5, 0.6, 0]}>
+        <boxGeometry args={[0.2, 1.2, 1.5]} />
+        <meshStandardMaterial {...MACHINE_MATERIAL} />
+      </mesh>
+      <mesh position={[1.5, 0.6, 0]}>
+        <boxGeometry args={[0.2, 1.2, 1.5]} />
+        <meshStandardMaterial {...MACHINE_MATERIAL} />
+      </mesh>
+
+      {/* Main Belt Surface */}
+      <mesh position={[0, 1.25, 0]}>
+        <boxGeometry args={[4, 0.1, 1.6]} />
+        <meshStandardMaterial color="#0a0a0a" roughness={0.9} />
+      </mesh>
+      <lineSegments position={[0, 1.25, 0]}>
+         <edgesGeometry args={[new THREE.BoxGeometry(4, 0.1, 1.6)]} />
+         <lineBasicMaterial color={glowColor} transparent opacity={0.3} />
+      </lineSegments>
+
+      {/* Rollers under Belt */}
+      <group position={[0, 1.1, 0]}>
+        <mesh position={[-1.8, 0, 0]} rotation={[Math.PI / 2, 0, 0]} ref={rollerRef1}>
+          <cylinderGeometry args={[0.15, 0.15, 1.7, 16]} />
+          <meshStandardMaterial {...ACCENT_MATERIAL} />
+        </mesh>
+        <mesh position={[0, 0, 0]} rotation={[Math.PI / 2, 0, 0]} ref={rollerRef2}>
+          <cylinderGeometry args={[0.15, 0.15, 1.7, 16]} />
+          <meshStandardMaterial {...ACCENT_MATERIAL} />
+        </mesh>
+        <mesh position={[1.8, 0, 0]} rotation={[Math.PI / 2, 0, 0]} ref={rollerRef3}>
+          <cylinderGeometry args={[0.15, 0.15, 1.7, 16]} />
+          <meshStandardMaterial {...ACCENT_MATERIAL} />
+        </mesh>
+      </group>
+
+      {/* AICO Sensor Module Attached */}
+      <mesh position={[0, 1.4, 0.85]}>
+         <boxGeometry args={[0.4, 0.3, 0.2]} />
+         <meshStandardMaterial color="#ffffff" emissive={glowColor} emissiveIntensity={1} />
+      </mesh>
+
+      <MachineLabel id={id} health={health} status={status} />
+    </group>
+  );
+}
+
+
 // --- Factory Floor Manager ---
 function FactoryFloor() {
-  // Generate a strict isometric layout of machines
   const factoryItems = useMemo(() => {
     const data = [];
-    const rows = 3;
-    const cols = 3;
-    const spacingX = 8.5;
-    const spacingZ = 8.5;
-    
-    for (let r = 0; r < rows; r++) {
-      for (let c = 0; c < cols; c++) {
-        const x = (r - (rows - 1) / 2) * spacingX;
-        const z = (c - (cols - 1) / 2) * spacingZ;
-        
-        // Setup realistic dynamic data matching typical dashboards
-        const isWarning = (r === 1 && c === 0) || (r === 0 && c === 2);
-        const healthVal = isWarning ? Math.floor(Math.random() * 25) + 20 : Math.floor(Math.random() * 25) + 75;
-        
-        data.push({
-          position: [x, 0, z],
-          id: `Z-${r}${c}X`,
-          health: healthVal,
-          status: isWarning ? 'warning' : 'active',
-          rotationOffset: Math.random() * Math.PI * 2,
-          timeScale: 0.6 + Math.random() * 0.6
-        });
-      }
-    }
+    // Hardcode a layout for the 3 types of machines
+    const layout = [
+      { type: 'robot', x: -8.5, z: -8.5, id: 'RA-01', health: 98, status: 'active' },
+      { type: 'cnc', x: 0, z: -8.5, id: 'CNC-X1', health: 45, status: 'warning' },
+      { type: 'conveyor', x: 8.5, z: -8.5, id: 'CV-Line-A', health: 95, status: 'active' },
+      
+      { type: 'conveyor', x: -8.5, z: 0, id: 'CV-Line-B', health: 92, status: 'active' },
+      { type: 'robot', x: 0, z: 0, id: 'RA-02', health: 12, status: 'critical' },
+      { type: 'cnc', x: 8.5, z: 0, id: 'CNC-X2', health: 88, status: 'active' },
+      
+      { type: 'cnc', x: -8.5, z: 8.5, id: 'CNC-Z1', health: 76, status: 'active' },
+      { type: 'conveyor', x: 0, z: 8.5, id: 'CV-Main', health: 99, status: 'active' },
+      { type: 'robot', x: 8.5, z: 8.5, id: 'RA-03', health: 34, status: 'warning' },
+    ];
+
+    layout.forEach((item) => {
+      data.push({
+        ...item,
+        position: [item.x, 0, item.z],
+        timeScale: 0.6 + Math.random() * 0.6,
+        rotationOffset: Math.random() * Math.PI * 2
+      });
+    });
     return data;
   }, []);
 
   return (
     <group>
-      {/* Central Architecture Lines / Conveyors linking the floor */}
-      {[0, -8.5, 8.5].map((zPos, idx) => (
-        <group key={`conv-${idx}`} position={[0, 0.2, zPos]}>
-          <mesh>
-            <boxGeometry args={[30, 0.4, 1.5]} />
-            <meshStandardMaterial color="#111111" roughness={0.9} />
-          </mesh>
-          <lineSegments position={[0, 0.21, 0]}>
-             <edgesGeometry args={[new THREE.BoxGeometry(30, 0.01, 1.5)]} />
-             <lineBasicMaterial color={GLOW_GREEN} transparent opacity={0.15} />
-          </lineSegments>
-        </group>
-      ))}
-
-      {/* Render All Complex Robot Arms */}
-      {factoryItems.map((mac, idx) => (
-        <RobotMachine key={idx} {...mac} />
-      ))}
+      {factoryItems.map((mac, idx) => {
+        if (mac.type === 'robot') return <RobotArmMachine key={idx} {...mac} />;
+        if (mac.type === 'cnc') return <CNCMachine key={idx} {...mac} />;
+        if (mac.type === 'conveyor') return <ConveyorBelt key={idx} {...mac} />;
+        return null;
+      })}
     </group>
   );
 }
@@ -242,13 +322,13 @@ export default function DashboardScene() {
         zoom={22}
         near={-100}
         far={1000}
-        rotation={[-Math.PI / 4, Math.PI / 4, 0]} // Precise isometric rotation offset
+        rotation={[-Math.PI / 4, Math.PI / 4, 0]} 
         lookAt={[0, 0, 0]}
       />
       
       {/* Subtle Global & Directional Lighting */}
       <ambientLight intensity={0.5} color="#ffffff" />
-      <directionalLight position={[20, 40, 20]} intensity={1.8} color="#ffffff" castShadow />
+      <directionalLight position={[20, 40, 20]} intensity={1.5} color="#ffffff" castShadow />
       
       {/* High-end real-world reflections on the metals */}
       <Environment preset="city" />

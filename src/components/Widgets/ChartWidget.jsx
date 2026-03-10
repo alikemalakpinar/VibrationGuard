@@ -1,27 +1,10 @@
-import React from 'react';
-import { BarChart as BarChartIcon, Activity } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Activity, Waves, Volume2 } from 'lucide-react';
 import { 
-  BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, Legend, 
-  ResponsiveContainer, AreaChart, Area 
+  BarChart, Bar, AreaChart, Area, XAxis, YAxis, Tooltip, Legend, 
+  ResponsiveContainer, CartesianGrid, Cell
 } from 'recharts';
 import './Widgets.css';
-
-// --- Mock Data ---
-const utilData = [
-  { name: 'Riveting', active: 120, idle: 45, downtime: 15 },
-  { name: 'Packing', active: 90, idle: 60, downtime: 30 },
-  { name: 'Cutting', active: 140, idle: 20, downtime: 5 },
-  { name: 'Labeling', active: 110, idle: 50, downtime: 20 },
-];
-
-const oeeData = [
-  { time: '07:00', performance: 65, quality: 40, availability: 80 },
-  { time: '08:00', performance: 75, quality: 50, availability: 60 },
-  { time: '09:00', performance: 90, quality: 80, availability: 75 },
-  { time: '10:00', performance: 80, quality: 70, availability: 95 },
-  { time: '11:00', performance: 60, quality: 55, availability: 65 },
-  { time: '12:00', performance: 85, quality: 90, availability: 100 },
-];
 
 // Custom Glassmorphic Tooltip
 const CustomTooltip = ({ active, payload, label }) => {
@@ -44,70 +27,90 @@ const CustomTooltip = ({ active, payload, label }) => {
 };
 
 export default function ChartWidget() {
+  const [soundData, setSoundData] = useState([]);
+  const [vibData, setVibData] = useState([]);
+
+  // Mock initial data arrays
+  useEffect(() => {
+    const initSound = Array.from({ length: 12 }, (_, i) => ({ freq: `${(i+1)*100}Hz`, db: Math.random() * 80 + 20 }));
+    const initVib = Array.from({ length: 20 }, (_, i) => ({ time: i, amp: Math.random() * 5 + 1 }));
+    setSoundData(initSound);
+    setVibData(initVib);
+
+    // Live update simulation
+    const interval = setInterval(() => {
+      setSoundData(prev => prev.map(d => ({ ...d, db: Math.max(20, Math.min(110, d.db + (Math.random() * 20 - 10))) })));
+      setVibData(prev => {
+        const newData = [...prev.slice(1), { time: prev[prev.length - 1].time + 1, amp: Math.max(0.5, Math.min(8, prev[prev.length - 1].amp + (Math.random() * 3 - 1.5))) }];
+        return newData;
+      });
+    }, 1500);
+
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <>
-      {/* 1. Equipment Utilization Stacked Bar */}
+      {/* 1. Frequency / Sound Spectrum Bar Chart */}
       <div className="glass-panel widget chart-widget">
         <div className="widget-header">
-          <h3 className="widget-title"><BarChartIcon size={16} /> Equipment Utilization by Station</h3>
+          <h3 className="widget-title"><Volume2 size={16} /> Sound Spectrum Analysis</h3>
           <button className="info-btn">i</button>
         </div>
 
         <div className="chart-container" style={{ width: '100%', height: 180, marginTop: '8px' }}>
           <ResponsiveContainer>
-            <BarChart data={utilData} maxBarSize={32}>
-              <XAxis dataKey="name" stroke="var(--text-secondary)" fontSize={10} tickLine={false} axisLine={false} dy={10} />
-              <YAxis stroke="var(--text-secondary)" fontSize={10} tickLine={false} axisLine={false} dx={-10} />
-              <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.02)' }} />
-              <Legend iconType="circle" wrapperStyle={{ fontSize: '11px', color: 'var(--text-secondary)', paddingTop: '10px' }} />
-              <Bar dataKey="active" stackId="a" fill="var(--accent-green)" radius={[0, 0, 2, 2]} />
-              <Bar dataKey="idle" stackId="a" fill="var(--chart-blue)" />
-              <Bar dataKey="downtime" stackId="a" fill="var(--accent-critical)" radius={[2, 2, 0, 0]} />
+            <BarChart data={soundData} margin={{ top: 10, right: 0, left: -25, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+              <XAxis dataKey="freq" stroke="var(--text-secondary)" fontSize={9} tickLine={false} axisLine={false} dy={5} />
+              <YAxis stroke="var(--text-secondary)" fontSize={10} tickLine={false} axisLine={false} />
+              <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
+              
+              <Bar dataKey="db" name="Sound (dB)" radius={[2, 2, 0, 0]}>
+                {soundData.map((entry, index) => {
+                  let color = 'var(--chart-blue)'; // Default safe
+                  if (entry.db > 75) color = 'var(--accent-orange)';
+                  if (entry.db > 95) color = 'var(--accent-critical)';
+                  return <Cell key={`cell-${index}`} fill={color} />;
+                })}
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         </div>
       </div>
 
-      {/* 2. OEE Over Time Spline Chart */}
+      {/* 2. Vibration Waveform Area Chart */}
       <div className="glass-panel widget chart-widget">
         <div className="widget-header">
-          <h3 className="widget-title"><Activity size={16} /> OEE Over Time</h3>
+          <h3 className="widget-title"><Waves size={16} /> Transient Vibration Waveform</h3>
           <button className="info-btn">i</button>
         </div>
 
         <div className="chart-container" style={{ width: '100%', height: 180, marginTop: '8px' }}>
           <ResponsiveContainer>
-            <LineChart data={oeeData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-              <XAxis dataKey="time" stroke="var(--text-secondary)" fontSize={10} tickLine={false} axisLine={false} dy={10} />
+            <AreaChart data={vibData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
+              <defs>
+                <linearGradient id="colorAmp" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="var(--accent-green)" stopOpacity={0.4}/>
+                  <stop offset="95%" stopColor="var(--accent-green)" stopOpacity={0}/>
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.02)" vertical={false} horizontal={false} />
+              <XAxis dataKey="time" stroke="var(--text-secondary)" fontSize={10} tickLine={false} axisLine={false} dy={5} tickFormatter={() => ''} />
               <YAxis stroke="var(--text-secondary)" fontSize={10} tickLine={false} axisLine={false} />
               <Tooltip content={<CustomTooltip />} />
-              <Legend iconType="circle" wrapperStyle={{ fontSize: '11px', color: 'var(--text-secondary)', paddingTop: '10px' }} />
               
-              <Line 
+              <Area 
                 type="monotone" 
-                dataKey="performance" 
+                dataKey="amp" 
+                name="Amplitude (mm/s)"
                 stroke="var(--accent-green)" 
-                strokeWidth={2} 
-                dot={{ r: 3, fill: 'var(--bg-color)', strokeWidth: 2 }} 
-                activeDot={{ r: 5, fill: 'var(--accent-green)', stroke: '#fff' }} 
+                strokeWidth={2}
+                fillOpacity={1} 
+                fill="url(#colorAmp)" 
+                isAnimationActive={false}
               />
-              <Line 
-                type="monotone" 
-                dataKey="quality" 
-                stroke="var(--chart-blue)" 
-                strokeWidth={2} 
-                dot={{ r: 3, fill: 'var(--bg-color)', strokeWidth: 2 }} 
-                activeDot={{ r: 5, fill: 'var(--chart-blue)', stroke: '#fff' }} 
-              />
-              <Line 
-                type="monotone" 
-                dataKey="availability" 
-                stroke="var(--accent-orange)" 
-                strokeWidth={2} 
-                dot={{ r: 3, fill: 'var(--bg-color)', strokeWidth: 2 }} 
-                activeDot={{ r: 5, fill: 'var(--accent-orange)', stroke: '#fff' }} 
-              />
-            </LineChart>
+            </AreaChart>
           </ResponsiveContainer>
         </div>
       </div>

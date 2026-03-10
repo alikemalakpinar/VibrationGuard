@@ -136,6 +136,10 @@
   filter: drop-shadow(0 0 6px rgba(242, 156, 56, 0.5));
 }
 
+.map-block.critical rect {
+  filter: drop-shadow(0 0 6px rgba(239, 68, 68, 0.5));
+}
+
 .map-controls {
   position: absolute;
   bottom: 8px;

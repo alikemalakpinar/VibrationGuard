@@ -1,0 +1,119 @@
+.topbar-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  height: 56px;
+  border-radius: 12px;
+}
+
+.zone-selector {
+  display: flex;
+  flex-direction: column;
+  padding-right: 20px;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.zone-selector .label {
+  font-size: 10px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.zone-dropdown {
+  background: transparent;
+  color: var(--text-primary);
+  border: none;
+  font-size: 14px;
+  font-weight: 500;
+  outline: none;
+  cursor: pointer;
+}
+
+.zone-dropdown option {
+  background: var(--bg-color);
+  color: var(--text-primary);
+}
+
+.timeline-container {
+  flex-grow: 1;
+  display: flex;
+  align-items: center;
+  position: relative;
+  height: 100%;
+  padding: 0 20px;
+}
+
+.timeline-tick {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  z-index: 2;
+}
+
+.tick-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--text-secondary);
+  margin-bottom: 4px;
+  transition: all 0.2s ease;
+}
+
+/* Simulate the orange/green dots occasionally */
+.timeline-tick:nth-child(2) .tick-dot,
+.timeline-tick:nth-child(8) .tick-dot,
+.timeline-tick:nth-child(10) .tick-dot {
+  background: var(--accent-orange);
+  box-shadow: 0 0 6px var(--accent-orange);
+}
+
+.timeline-tick.active .tick-dot {
+  background: var(--accent-green);
+  box-shadow: 0 0 8px var(--accent-green);
+}
+
+.tick-time {
+  font-size: 10px;
+  color: var(--text-secondary);
+}
+
+.timeline-tick.active .tick-time {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.timeline-highlight {
+  position: absolute;
+  top: 10%;
+  left: 30%; /* Approximations to match active items */
+  width: 32%;
+  height: 80%;
+  background: rgba(45, 226, 91, 0.15);
+  border: 1px solid var(--accent-green);
+  box-shadow: 0 0 15px rgba(45, 226, 91, 0.2) inset;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.share-btn {
+  background: rgba(59, 130, 246, 0.2);
+  border: 1px solid rgba(59, 130, 246, 0.5);
+  color: #60a5fa;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 16px;
+  transition: all 0.2s;
+}
+
+.share-btn:hover {
+  background: rgba(59, 130, 246, 0.4);
+  color: #fff;
+}

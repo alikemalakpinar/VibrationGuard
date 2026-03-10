@@ -1,0 +1,241 @@
+/* MachineDetailDark.css */
+.md-container {
+  width: 100vw;
+  height: 100vh;
+  background: var(--bg-color); /* radial gradient from index.css applies to body, maybe we need extra layer */
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Base Top Header */
+.md-header {
+  padding: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(18, 28, 24, 0.4);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  z-index: 10;
+}
+
+.md-back-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.md-back-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.md-machine-title {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.md-machine-title h1 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.md-status-badge {
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.md-status-badge.active {
+  background: rgba(45, 226, 91, 0.15);
+  color: var(--accent-green);
+  border: 1px solid rgba(45, 226, 91, 0.3);
+  box-shadow: 0 0 10px rgba(45, 226, 91, 0.2);
+}
+
+.md-status-badge.warning {
+  background: rgba(242, 156, 56, 0.15);
+  color: var(--accent-orange);
+  border: 1px solid rgba(242, 156, 56, 0.3);
+  box-shadow: 0 0 10px rgba(242, 156, 56, 0.2);
+}
+
+.md-status-badge.critical {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--accent-critical);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.2);
+}
+
+/* Layout Grid Layout */
+.md-layout {
+  display: grid;
+  grid-template-columns: 1fr 400px;
+  gap: 24px;
+  padding: 24px;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* Left Column: 3D Visualizer Hologram */
+.md-hologram-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  overflow: hidden;
+  /* Glowing border trick */
+}
+
+.md-hologram-container::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  border-radius: 12px;
+  border: 1px solid rgba(45, 226, 91, 0.1);
+  pointer-events: none;
+}
+
+.md-hologram-bg {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: radial-gradient(circle at center, rgba(45, 226, 91, 0.05) 0%, transparent 60%);
+  z-index: 0;
+}
+
+/* Circular Sweep Radar Animation Placeholder */
+.md-radar-sweep {
+  width: 400px;
+  height: 400px;
+  border-radius: 50%;
+  border: 2px dashed rgba(45, 226, 91, 0.2);
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.md-radar-sweep::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 50%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent-green));
+  transform-origin: 0 50%;
+  animation: radarSweep 4s linear infinite;
+}
+
+@keyframes radarSweep {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.md-hologram-mock-machine {
+  color: var(--accent-green);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  animation: pulseOpacity 2s ease-in-out infinite;
+  text-shadow: 0 0 10px var(--accent-green);
+}
+
+@keyframes pulseOpacity {
+  0% { opacity: 0.5; }
+  50% { opacity: 1; }
+  100% { opacity: 0.5; }
+}
+
+/* Right Column: Sensor Data Scroller */
+.md-sensor-scroller {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow-y: auto;
+  padding-right: 8px; /* space for scrollbar */
+}
+
+/* Hide scrollbar for clean look */
+.md-sensor-scroller::-webkit-scrollbar {
+  width: 6px;
+}
+.md-sensor-scroller::-webkit-scrollbar-track {
+  background: rgba(0,0,0,0.2);
+  border-radius: 10px;
+}
+.md-sensor-scroller::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.1);
+  border-radius: 10px;
+}
+
+/* Individual Sensor Card */
+.md-sensor-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+}
+
+.md-sensor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.md-sensor-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+/* Color definitions */
+.md-sensor-title.vib { color: var(--accent-green); }
+.md-sensor-title.snd { color: var(--chart-blue); }
+.md-sensor-title.tmp { color: var(--accent-orange); }
+.md-sensor-title.mag { color: #a855f7; } /* Purple */
+.md-sensor-title.hum { color: #06b6d4; } /* Cyan */
+
+.md-sensor-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 0 10px rgba(255,255,255,0.2);
+}
+
+.md-sensor-unit {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--text-secondary);
+}
+
+.md-sensor-chart {
+  width: 100%;
+  height: 60px; /* Small sparkline charts */
+  overflow: hidden;
+}

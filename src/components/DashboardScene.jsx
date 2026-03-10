@@ -61,32 +61,36 @@ const MachineLabel = ({ id, health, status }) => {
 };
 
 // --- Base Floor Plate for Machines ---
-const GlowingBase = ({ color }) => (
-  <group>
-    <mesh position={[0, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-      <planeGeometry args={[5, 5]} />
-      <meshBasicMaterial color={color} transparent opacity={0.15} side={THREE.DoubleSide} depthWrite={false} />
-    </mesh>
-    <mesh position={[0, 0.05, 0]}>
-      <boxGeometry args={[4, 0.1, 4]} />
-      <meshStandardMaterial color="#0a0a0a" roughness={0.9} />
-    </mesh>
-    <lineSegments position={[0, 0.05, 0]}>
-      <edgesGeometry args={[new THREE.BoxGeometry(4, 0.1, 4)]} />
-      <lineBasicMaterial color={color} transparent opacity={0.4} />
-    </lineSegments>
-  </group>
-);
+const GlowingBase = ({ color, isHovered }) => {
+  const opacity = isHovered ? 0.4 : 0.15;
+  const lineOpacity = isHovered ? 0.8 : 0.4;
+  return (
+    <group>
+      <mesh position={[0, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[5, 5]} />
+        <meshBasicMaterial color={color} transparent opacity={opacity} side={THREE.DoubleSide} depthWrite={false} />
+      </mesh>
+      <mesh position={[0, 0.05, 0]}>
+        <boxGeometry args={[4, 0.1, 4]} />
+        <meshStandardMaterial color="#0a0a0a" roughness={0.9} />
+      </mesh>
+      <lineSegments position={[0, 0.05, 0]}>
+        <edgesGeometry args={[new THREE.BoxGeometry(4, 0.1, 4)]} />
+        <lineBasicMaterial color={color} transparent opacity={lineOpacity} />
+      </lineSegments>
+    </group>
+  );
+};
 
 // --- 1. Robot Arm Machine ---
-function RobotArmMachine({ position, id, health, status, timeScale = 1, rotationOffset = 0 }) {
+function RobotArmMachine({ position, id, health, status, timeScale = 1, rotationOffset = 0, onClick, isHovered, setHovered }) {
   const baseRef = useRef();
   const lowerArmRef = useRef();
   const upperArmRef = useRef();
   const headRef = useRef();
   
   const glowColor = status === 'critical' ? GLOW_CRITICAL : status === 'warning' ? GLOW_ORANGE : GLOW_GREEN;
-  const targetIntensity = status !== 'active' ? 3 : 1.5;
+  const targetIntensity = (status !== 'active' ? 3 : 1.5) + (isHovered ? 1.5 : 0);
 
   useFrame((state) => {
     const t = state.clock.getElapsedTime() * timeScale + rotationOffset;
@@ -99,8 +103,13 @@ function RobotArmMachine({ position, id, health, status, timeScale = 1, rotation
   });
 
   return (
-    <group position={position}>
-      <GlowingBase color={glowColor} />
+    <group 
+      position={position}
+      onClick={(e) => { e.stopPropagation(); onClick(id); }}
+      onPointerOver={(e) => { e.stopPropagation(); document.body.style.cursor = 'pointer'; setHovered(id); }}
+      onPointerOut={(e) => { e.stopPropagation(); document.body.style.cursor = 'auto'; setHovered(null); }}
+    >
+      <GlowingBase color={glowColor} isHovered={isHovered} />
       
       {/* Pedestal */}
       <mesh position={[0, 0.5, 0]}>
@@ -154,7 +163,7 @@ function RobotArmMachine({ position, id, health, status, timeScale = 1, rotation
 }
 
 // --- 2. CNC Milling Machine ---
-function CNCMachine({ position, id, health, status, timeScale = 1, rotationOffset = 0 }) {
+function CNCMachine({ position, id, health, status, timeScale = 1, rotationOffset = 0, onClick, isHovered, setHovered }) {
   const spindleRef = useRef();
   const glowColor = status === 'critical' ? GLOW_CRITICAL : status === 'warning' ? GLOW_ORANGE : GLOW_GREEN;
 
@@ -167,8 +176,13 @@ function CNCMachine({ position, id, health, status, timeScale = 1, rotationOffse
   });
 
   return (
-    <group position={position}>
-      <GlowingBase color={glowColor} />
+    <group 
+      position={position}
+      onClick={(e) => { e.stopPropagation(); onClick(id); }}
+      onPointerOver={(e) => { e.stopPropagation(); document.body.style.cursor = 'pointer'; setHovered(id); }}
+      onPointerOut={(e) => { e.stopPropagation(); document.body.style.cursor = 'auto'; setHovered(null); }}
+    >
+      <GlowingBase color={glowColor} isHovered={isHovered} />
       
       {/* Main Enclosure */}
       <mesh position={[0, 1.8, -0.5]}>
@@ -183,7 +197,7 @@ function CNCMachine({ position, id, health, status, timeScale = 1, rotationOffse
       </mesh>
 
       {/* Emissive Inside Bed Light */}
-      <rectAreaLight width={3} height={2} color="#ffffff" intensity={2} position={[0, 3, 0]} rotation={[-Math.PI / 2, 0, 0]} />
+      <rectAreaLight width={3} height={2} color="#ffffff" intensity={isHovered ? 4 : 2} position={[0, 3, 0]} rotation={[-Math.PI / 2, 0, 0]} />
 
       {/* Moving Spindle Inside */}
       <group position={[0, 2.5, 0]} ref={spindleRef}>
@@ -193,9 +207,9 @@ function CNCMachine({ position, id, health, status, timeScale = 1, rotationOffse
         </mesh>
         <mesh position={[0, -1.1, 0]}>
           <cylinderGeometry args={[0.05, 0.01, 0.4, 8]} />
-          <meshStandardMaterial color="#ffffff" emissive={glowColor} emissiveIntensity={1.5} toneMapped={false} />
+          <meshStandardMaterial color="#ffffff" emissive={glowColor} emissiveIntensity={isHovered ? 3 : 1.5} toneMapped={false} />
         </mesh>
-        <pointLight color={glowColor} intensity={0.5} distance={3} position={[0, -1.2, 0]} />
+        <pointLight color={glowColor} intensity={isHovered ? 1 : 0.5} distance={3} position={[0, -1.2, 0]} />
       </group>
 
       <MachineLabel id={id} health={health} status={status} />
@@ -204,7 +218,7 @@ function CNCMachine({ position, id, health, status, timeScale = 1, rotationOffse
 }
 
 // --- 3. Conveyor Belt Motor System ---
-function ConveyorBelt({ position, id, health, status, timeScale = 1 }) {
+function ConveyorBelt({ position, id, health, status, timeScale = 1, onClick, isHovered, setHovered }) {
   const rollerRef1 = useRef();
   const rollerRef2 = useRef();
   const rollerRef3 = useRef();
@@ -218,8 +232,13 @@ function ConveyorBelt({ position, id, health, status, timeScale = 1 }) {
   });
 
   return (
-    <group position={position}>
-      <GlowingBase color={glowColor} />
+    <group 
+      position={position}
+      onClick={(e) => { e.stopPropagation(); onClick(id); }}
+      onPointerOver={(e) => { e.stopPropagation(); document.body.style.cursor = 'pointer'; setHovered(id); }}
+      onPointerOut={(e) => { e.stopPropagation(); document.body.style.cursor = 'auto'; setHovered(null); }}
+    >
+      <GlowingBase color={glowColor} isHovered={isHovered} />
       
       {/* Conveyor Legs */}
       <mesh position={[-1.5, 0.6, 0]}>
@@ -238,7 +257,7 @@ function ConveyorBelt({ position, id, health, status, timeScale = 1 }) {
       </mesh>
       <lineSegments position={[0, 1.25, 0]}>
          <edgesGeometry args={[new THREE.BoxGeometry(4, 0.1, 1.6)]} />
-         <lineBasicMaterial color={glowColor} transparent opacity={0.3} />
+         <lineBasicMaterial color={glowColor} transparent opacity={isHovered ? 0.6 : 0.3} />
       </lineSegments>
 
       {/* Rollers under Belt */}
@@ -260,7 +279,7 @@ function ConveyorBelt({ position, id, health, status, timeScale = 1 }) {
       {/* AICO Sensor Module Attached */}
       <mesh position={[0, 1.4, 0.85]}>
          <boxGeometry args={[0.4, 0.3, 0.2]} />
-         <meshStandardMaterial color="#ffffff" emissive={glowColor} emissiveIntensity={1} />
+         <meshStandardMaterial color="#ffffff" emissive={glowColor} emissiveIntensity={isHovered ? 2 : 1} />
       </mesh>
 
       <MachineLabel id={id} health={health} status={status} />
@@ -270,41 +289,21 @@ function ConveyorBelt({ position, id, health, status, timeScale = 1 }) {
 
 
 // --- Factory Floor Manager ---
-function FactoryFloor() {
-  const factoryItems = useMemo(() => {
-    const data = [];
-    // Hardcode a layout for the 3 types of machines
-    const layout = [
-      { type: 'robot', x: -8.5, z: -8.5, id: 'RA-01', health: 98, status: 'active' },
-      { type: 'cnc', x: 0, z: -8.5, id: 'CNC-X1', health: 45, status: 'warning' },
-      { type: 'conveyor', x: 8.5, z: -8.5, id: 'CV-Line-A', health: 95, status: 'active' },
-      
-      { type: 'conveyor', x: -8.5, z: 0, id: 'CV-Line-B', health: 92, status: 'active' },
-      { type: 'robot', x: 0, z: 0, id: 'RA-02', health: 12, status: 'critical' },
-      { type: 'cnc', x: 8.5, z: 0, id: 'CNC-X2', health: 88, status: 'active' },
-      
-      { type: 'cnc', x: -8.5, z: 8.5, id: 'CNC-Z1', health: 76, status: 'active' },
-      { type: 'conveyor', x: 0, z: 8.5, id: 'CV-Main', health: 99, status: 'active' },
-      { type: 'robot', x: 8.5, z: 8.5, id: 'RA-03', health: 34, status: 'warning' },
-    ];
-
-    layout.forEach((item) => {
-      data.push({
-        ...item,
-        position: [item.x, 0, item.z],
-        timeScale: 0.6 + Math.random() * 0.6,
-        rotationOffset: Math.random() * Math.PI * 2
-      });
-    });
-    return data;
-  }, []);
+function FactoryFloor({ factoryData, onMachineClick }) {
+  const [hoveredNode, setHoveredNode] = useState(null);
 
   return (
     <group>
-      {factoryItems.map((mac, idx) => {
-        if (mac.type === 'robot') return <RobotArmMachine key={idx} {...mac} />;
-        if (mac.type === 'cnc') return <CNCMachine key={idx} {...mac} />;
-        if (mac.type === 'conveyor') return <ConveyorBelt key={idx} {...mac} />;
+      {factoryData?.map((mac, idx) => {
+        const props = {
+          ...mac,
+          onClick: onMachineClick,
+          isHovered: hoveredNode === mac.id,
+          setHovered: setHoveredNode
+        };
+        if (mac.type === 'robot') return <RobotArmMachine key={idx} {...props} />;
+        if (mac.type === 'cnc') return <CNCMachine key={idx} {...props} />;
+        if (mac.type === 'conveyor') return <ConveyorBelt key={idx} {...props} />;
         return null;
       })}
     </group>
@@ -312,7 +311,7 @@ function FactoryFloor() {
 }
 
 // --- Exact Scene Shell Engine ---
-export default function DashboardScene() {
+export default function DashboardScene({ factoryData, onMachineClick }) {
   return (
     <Canvas gl={{ antialias: true, alpha: true, toneMapping: THREE.ACESFilmicToneMapping }}>
       {/* Strict Isometric Camera setup aiming at the center */}
@@ -347,7 +346,7 @@ export default function DashboardScene() {
         fadeStrength={1}
       />
 
-      <FactoryFloor />
+      <FactoryFloor factoryData={factoryData} onMachineClick={onMachineClick} />
 
       {/* Integration Fog for smooth fading at the viewport edges */}
       <fog attach="fog" args={['#050808', 40, 80]} />
